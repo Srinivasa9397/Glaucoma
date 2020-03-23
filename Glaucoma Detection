@@ -1,0 +1,100 @@
+import numpy as np
+import os
+import zipfile
+import random
+import tensorflow as tf
+from tensorflow.keras.optimizers import RMSprop
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from shutil import copyfile
+
+import tensorflow as tf
+from tensorflow import keras
+import h5py
+
+import os
+import numpy as np
+from keras.models import Sequential
+from keras.layers import Activation, Dropout, Flatten, Dense
+from keras.preprocessing.image import ImageDataGenerator
+from keras.layers import Conv2D, MaxPooling2D, ZeroPadding2D
+from keras import optimizers
+import scipy
+import pylab as pl
+import matplotlib.cm as cm
+%matplotlib inline
+
+import os
+import json
+import h5py
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+import cv2
+
+import glob
+
+from sklearn.model_selection import train_test_split
+
+%matplotlib inline
+
+
+### From drive 
+local_zip = '/content/drive/My Drive/Glaucoma database/Glaucoma.zip'
+zip_ref   = zipfile.ZipFile(local_zip, 'r')
+zip_ref.extractall('/content')
+zip_ref.close()
+
+try:
+    os.mkdir('/content/Glaucoma')
+    os.mkdir('/content/Glaucoma/training')
+    os.mkdir('/content/Glaucoma/testing')
+    os.mkdir('/content/Glaucoma/training/advanced_glaucoma')
+    os.mkdir('/content/Glaucoma/training/normal_control')
+    os.mkdir('/content/Glaucoma/testing/advanced_glaucoma')
+    os.mkdir('/content/Glaucoma/testing/normal_control')
+except OSError:
+    pass
+
+def load_data(data_path, target_size=(128,128)):
+    img_arr_img = []
+    filelist_img = glob.glob(data_path+"*.png")
+    image_paths = sorted(filelist_img)
+    
+    for image_path in image_paths:
+        try:
+            image = cv2.imread(image_path)
+            image = cv2.resize(image, dsize=target_size)#interpolation=cv2.INTER_CUBIC) #/255.0
+            #cv2.normalize(image, image, 0, 255, cv2.NORM_MINMAX)
+            img_arr_img.append(image)
+        except (RuntimeError, TypeError,NameError) as e:
+            print(e)
+            pass
+    return np.asarray(img_arr_img), image_paths
+
+path_advance_glaucoma= '/content/Glaucoma/advance_glaucoma/'
+path_normal_control = '/content/Glaucoma/normal_control/'
+
+X_advance_glaucoma, filenames_advance_glaucoma= load_data(path_advance_glaucoma)
+X_normal_control, filenames_normal_control= load_data(path_normal_control)
+
+# We stack vertically X_infected and X_uninfected to make the data tensor X
+X = np.vstack((X_advance_glaucoma, X_normal_control))
+
+# Let's create the labels vector
+# 0 stands for not infected
+# 1 stands for infected
+labels = [0]*X_advance_glaucoma.shape[0] + [1]*X_normal_control.shape[0]
+
+# We need to separate the data into train and test arrays 
+X_train, X_test, y_train, y_test = train_test_split(X,labels,test_size=0.2,random_state=50)
+
+fig=plt.figure(figsize=(28, 28))
+columns = 2
+rows = 2
+for i in range(1, columns*rows +1):
+    fig.add_subplot(rows, columns, i)
+    plt.imshow(X_train[i])
+    if y_train[i] == 0:
+        plt.title('normal_control')
+    else:
+        plt.title('advance_glaucoma')
